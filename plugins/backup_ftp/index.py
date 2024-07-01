@@ -173,6 +173,15 @@ def deleteFile():
         return mw.returnJson(True, "删除成功")
     return mw.returnJson(False, "删除失败")
 
+def findPathName(path, filename):
+    f = os.scandir(path)
+    l = []
+    for ff in f:
+        t = {}
+        if ff.name.find(filename) > -1:
+            t['filename'] = path + '/' + ff.name
+            l.append(t)
+    return l
 
 def backupAllFunc(stype):
     os.chdir(mw.getRunDir())
@@ -202,6 +211,7 @@ def backupAllFunc(stype):
         backups = sql.table('backup').where(
             'type=? and pid=?', ('1', pid)).field('id,filename').select()
     if stype == 'path':
+        backup_dir = mw.getBackupDir()
         backup_path = backup_dir + '/path'
         _name = 'path_{}'.format(os.path.basename(name))
         backups = findPathName(backup_path, _name)
@@ -237,6 +247,10 @@ def backupAllFunc(stype):
         bk_name = stype
 
     find_path = mw.getBackupDir() + '/' + bk_name + '/' + bk_prefix + '_' + name
+    if stype == 'path':
+        _name = 'path_{}'.format(os.path.basename(name))
+        find_path = mw.getBackupDir() + '/path/'+_name
+
     find_new_file = "ls " + find_path + \
         "_* | grep '.gz' | cut -d \  -f 1 | awk 'END {print}'"
 
@@ -245,7 +259,7 @@ def backupAllFunc(stype):
         mw.echoInfo("not find upload file!")
         return ''
 
-    print("|-准备上传文件 {}".format(filename))
+    mw.echoInfo("准备上传文件 {}".format(filename))
     ftp = FtpPSClient()
     ftp.uploadFile(filename, stype)
 
@@ -259,7 +273,7 @@ def backupAllFunc(stype):
             fn = os.path.basename(backup['filename'])
             object_name = ftp.buildDirName(stype, fn)
             ftp.deleteFile(object_name)
-            mw.echoInfo("---已清理远程过期备份文件：" + object_name)
+            mw.echoInfo("已清理远程过期备份文件：" + object_name)
             sep -= 1
             if sep < 0:
                 break

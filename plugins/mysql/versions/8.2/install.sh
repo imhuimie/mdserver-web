@@ -62,15 +62,6 @@ Install_mysql()
 	mkdir -p ${mysqlDir}
 	echo '正在安装脚本文件...' > $install_tmp
 
-
-	if id mysql &> /dev/null ;then 
-	    echo "mysql UID is `id -u www`"
-	    echo "mysql Shell is `grep "^www:" /etc/passwd |cut -d':' -f7 `"
-	else
-	    groupadd mysql
-		useradd -g mysql mysql
-	fi
-
 	# ----- cpu start ------
 	if [ -z "${cpuCore}" ]; then
     	cpuCore="1"
@@ -117,11 +108,11 @@ Install_mysql()
 	if [ -f ${mysqlDir}/mysql-boost-${VERSION}.tar.gz ];then
 		md5_mysql=`md5sum ${mysqlDir}/mysql-boost-${VERSION}.tar.gz  | awk '{print $1}'`
 		if [ "${md5_mysql_ok}" == "${md5_mysql}" ]; then
-			echo "mysql8.0 file  check ok"
+			echo "mysql8.2 file  check ok"
 		else
 			# 重新下载
 			rm -rf ${mysqlDir}/mysql-${VERSION}
-			wget --no-check-certificate -O ${mysqlDir}/mysql-boost-${VERSION}.tar.gz --tries=3 https://dev.mysql.com/get/Downloads/MySQL-8.0/mysql-boost-${VERSION}.tar.gz
+			wget --no-check-certificate -O ${mysqlDir}/mysql-boost-${VERSION}.tar.gz --tries=3 https://dev.mysql.com/get/Downloads/MySQL-8.2/mysql-boost-${VERSION}.tar.gz
 		fi
 	fi
 

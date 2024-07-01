@@ -26,7 +26,7 @@ function phpPost(method, version, args,callback){
     },'json'); 
 }
 
-function phpPostCallbak(method, version, args,callback){
+function phpPostCallback(method, version, args,callback){
     var loadT = layer.msg('正在获取...', { icon: 16, time: 0, shade: 0.3 });
 
     var req_data = {};
@@ -79,7 +79,7 @@ function phpSetConfig(version) {
                     ibody = '<select class="bt-input-text mr5" name="' + rdata[i].name + '" style="width: ' + w + 'px;"><option value="On" ' + selected_1 + '>开启</option><option value="Off" ' + selected_0 + '>关闭</option></select>'
                     break;
             }
-            mlist += '<p><span>' + rdata[i].name + '</span>' + ibody + ', <font>' + rdata[i].ps + '</font></p>'
+            mlist += '<p><span>' + rdata[i].name + '</span>' + ibody + ', <font>' + rdata[i].ps + '</font></p>';
         }
         var phpCon = '<style>.conf_p p{margin-bottom: 2px}</style><div class="conf_p" style="margin-bottom:0">\
                         ' + mlist + '\
@@ -715,7 +715,7 @@ function getPHPInfo_old(version) {
 }
 
 function getPHPInfo(version) {
-    phpPostCallbak('get_php_info', version, {}, function(data){
+    phpPostCallback('get_php_info', version, {}, function(data){
         if (!data.status){
             layer.msg(rdata.msg, { icon: 2 });
             return;
@@ -739,7 +739,7 @@ function phpLibConfig(version){
         // var rdata = $.parseJSON(rdata.data);
     // });
     
-    phpPostCallbak('get_lib_conf', version, {}, function(rdata){
+    phpPostCallback('get_lib_conf', version, {}, function(rdata){
         var rdata = rdata.data;
 
         if (!rdata.status){

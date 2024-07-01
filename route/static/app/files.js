@@ -290,11 +290,11 @@ function openFilename(obj){
 	var ext = getSuffixName(path);
 
 	// console.log(path,ext);
-	if (inArray(ext,['html','htm','php','txt','md','js','css','scss','json','c','h','pl','py','java','log','conf','sh','json'])){
+	if (inArray(ext,['html','htm','php','txt','md','js','css','scss','json','c','h','pl','py','java','log','conf','sh','json','ini'])){
 		onlineEditFile(0, path);
 	}
 
-	if (inArray(ext,['png','jpeg','gif','jpg','ico'])){
+	if (inArray(ext,['png','jpeg','jpg','gif','webp','bmp','ico'])){
         getImage(path);
 	}
 
@@ -366,7 +366,7 @@ function makeFilePage(showRow, page = ''){
 	
 	//分页
 	$("#filePage").html(page);
-	$("#filePage div").append("<span class='Pcount-item'>每页<select style='margin-left: 3px;margin-right: 3px;border:#ddd 1px solid' class='showRow'>"+rowOption+"</select>条</span>");
+	$("#filePage div").append("<span class='Pcount-item'>每页<select name='file_page' style='margin-left: 3px;margin-right: 3px;border:#ddd 1px solid;' class='showRow'>"+rowOption+"</select>条</span>");
 	$("#filePage .Pcount").css("left","16px"); 
 }
 
@@ -566,17 +566,22 @@ function getFiles(Path) {
 				mtime_icon = '<span class="glyphicon glyphicon-option-horizontal" style="top:3px;margin-left:5px;color:#bbb">';
 			}
 
+			var fname_icon = '<span class="glyphicon glyphicon-triangle-top" style="margin-left:5px;color:#bbb">';
+			if (post['order'] == 'fname desc'){
+				fname_icon = '<span class="glyphicon glyphicon-triangle-bottom" style="margin-left:5px;color:#bbb">';
+			} else if (post['order'] == 'fname asc'){
+				fname_icon = '<span class="glyphicon glyphicon-triangle-top" style="margin-left:5px;color:#bbb">';
+			} else {
+				fname_icon = '<span class="glyphicon glyphicon-option-horizontal" style="top:3px;margin-left:5px;color:#bbb">';
+			}
+
 			var tablehtml = '<table width="100%" border="0" cellpadding="0" cellspacing="0" class="table table-hover">\
 				<thead>\
 					<tr>\
 						<th width="30"><input type="checkbox" id="setBox" placeholder=""></th>\
-						<th>文件名</th>\
-						<th onclick="listFileOrder(\'size\',this)" style="cursor: pointer;">大小\
-							'+size_icon+'\
-						</th>\
-						<th onclick="listFileOrder(\'mtime\',this)" style="cursor: pointer;">修改时间\
-							'+mtime_icon+'\
-						</th>\
+						<th onclick="listFileOrder(\'fname\',this)" style="cursor: pointer;">文件名'+fname_icon+'</th>\
+						<th onclick="listFileOrder(\'size\',this)" style="cursor: pointer;">大小'+size_icon+'</th>\
+						<th onclick="listFileOrder(\'mtime\',this)" style="cursor: pointer;">修改时间'+mtime_icon+'</th>\
 						<th>权限</th>\
 						<th>所有者</th>\
 						<th style="text-align: right;" width="330">操作</th>\
@@ -1587,6 +1592,22 @@ function setChmod(action,fileName){
 	var toExec = fileName == lan.files.all?'batch(3,1)':'setChmod(1,\''+fileName+'\')';
 	$.post('/files/file_access','filename='+encodeURIComponent(fileName),function(rdata){
 		// console.log(rdata);
+		var sys_users = rdata.sys_users;
+		var own_html = '';
+		var is_find_own_option = false;
+		for (var i = 0; i < sys_users.length; i++) {
+			var own = sys_users[i];
+			if (rdata.chown==own){
+				is_find_own_option = true;
+				own_html += '<option value="'+own+'" selected="selected">'+own+'</option>';
+			} else {
+				own_html += '<option value="'+own+'">'+own+'</option>';
+			}
+		}
+		if (!is_find_own_option){
+			own_html += '<option value="'+rdata.chown+'" selected="selected">'+rdata.chown+'</option>';
+		}
+
 		layer.open({
 			type:1,
 			closeBtn: 1,
@@ -1614,10 +1635,8 @@ function setChmod(action,fileName){
 						</fieldset>\
 						<div class="setchmodnum"><input class="bt-input-text" type="text" id="access" maxlength="3" value="'+rdata.chmod+'">权限，\
 						<span>所有者\
-						<select id="chown" class="bt-input-text">\
-							<option value="www" '+(rdata.chown=='www'?'selected="selected"':'')+'>www</option>\
-							<option value="mysql" '+(rdata.chown=='mysql'?'selected="selected"':'')+'>mysql</option>\
-							<option value="root" '+(rdata.chown=='root'?'selected="selected"':'')+'>root</option>\
+						<select id="chown" class="bt-input-text" style="width:100px;">\
+							'+own_html+'\
 						</select></span></div>\
 						<div class="bt-form-submit-btn">\
 							<button type="button" class="btn btn-danger btn-sm btn-title" onclick="layer.closeAll()">关闭</button>\

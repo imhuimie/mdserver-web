@@ -55,8 +55,7 @@ class backupTools:
         if not os.path.exists(filename):
             log = "网站[" + name + "]备份失败!"
             print("★[" + endDate + "] " + log)
-            print(
-                "----------------------------------------------------------------------------")
+            print("----------------------------------------------------------------------------")
             return
 
         outTime = time.time() - startTime
@@ -86,6 +85,18 @@ class backupTools:
     def getConf(self, mtype='mysql'):
         path = mw.getServerDir() + '/' + mtype + '/etc/my.cnf'
         return path
+
+    def recognizeDbMode(self, mtype='mysql'):
+        conf = self.getConf(mtype)
+        con = mw.readFile(conf)
+        rep = r"!include %s/(.*)?\.cnf" % (mw.getServerDir() +'/'+ mtype +"/etc/mode",)
+        mode = 'none'
+        try:
+            data = re.findall(rep, con, re.M)
+            mode = data[0]
+        except Exception as e:
+            pass
+        return mode
 
      # 数据库密码处理
     def mypass(self, act, root):
@@ -134,13 +145,20 @@ class backupTools:
         # mw.execShell(db_path + "/bin/mysqldump --opt --default-character-set=utf8 " +
         #              name + " | gzip > " + filename)
 
-        # mw.execShell(db_path + "/bin/mysqldump --skip-lock-tables --default-character-set=utf8 " +
-        #              name + " | gzip > " + filename)
-
         # mw.execShell(db_path + "/bin/mysqldump  --single-transaction --quick --default-character-set=utf8 " +
         #              name + " | gzip > " + filename)
 
-        cmd = db_path + "/bin/mysqldump --defaults-file=" + my_cnf + "  --force --opt --default-character-set=utf8 " + \
+        # 开启一致性事务 会lock表
+        # cmd = db_path + "/bin/mysqldump --defaults-file=" + my_cnf + "  --force --opt --default-character-set=utf8 " + \
+        #     name + " | gzip > " + filename
+        option = ''
+        mode = self.recognizeDbMode('mysql')
+        if mode == 'gtid':
+            option = ' --set-gtid-purged=off '
+
+        # skip-opt 不会lock表
+        # --skip-opt --create-options
+        cmd = db_path + "/bin/mysqldump --defaults-file=" + my_cnf +" " + option +" --single-transaction -q --default-character-set=utf8mb4 " + \
             name + " | gzip > " + filename
         # print(cmd)
         mw.execShell(cmd)
@@ -240,7 +258,7 @@ class backupTools:
             for backup in backups:
                 abspath_bk = backup_path + "/" + backup
                 mw.execShell("rm -f " + abspath_bk)
-                mw.echoInfo("|---已清理过期备份文件：" + abspath_bk)
+                mw.echoInfo("已清理过期备份文件：" + abspath_bk)
                 num -= 1
                 if num < 1:
                     break

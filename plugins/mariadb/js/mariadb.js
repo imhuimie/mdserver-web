@@ -874,7 +874,7 @@ function openPhpmyadmin(name,username,password){
         }
 
         if (rdata.data['cfg']['choose'] != 'mariadb'){
-            layer.msg('当前为['+rdata.choose+']模式,若要使用请修改phpMyAdmin访问切换.',{icon:2,shade: [0.3, '#000']});
+            layer.msg('当前为['+rdata.data['cfg']['choose']+']模式,若要使用请修改phpMyAdmin访问切换.',{icon:2,shade: [0.3, '#000']});
             return;
         }
         var home_page = rdata.data['home_page'];
@@ -1153,7 +1153,7 @@ function dbList(page, search){
             list += '<td><span class="c9 input-edit" onclick="setDbPs(\''+rdata.data[i]['id']+'\',\''+rdata.data[i]['name']+'\',this)" style="display: inline-block;">'+rdata.data[i]['ps']+'</span></td>';
             list += '<td style="text-align:right">';
 
-            list += '<a href="javascript:;" class="btlink" class="btlink" onclick="setBackup(\''+rdata.data[i]['name']+'\')" title="数据库备份">'+(rdata.data[i]['is_backup']?'备份':'未备份') +'</a> | ';
+            list += '<a href="javascript:;" class="btlink" class="btlink" onclick="setBackup(\''+rdata.data[i]['name']+'\')" title="数据库备份">'+(rdata.data[i]['is_backup']?'已备份':'未备份') +'</a> | ';
 
             var rw = '';
             var rw_change = 'all';
@@ -1655,7 +1655,7 @@ function addMasterRepSlaveUser(){
 
 
 
-function updateMasterRepSlaveUser(username){
+function updateMasterRepSlaveUser(username, password){
   
     var index = layer.open({
         type: 1,
@@ -1668,7 +1668,7 @@ function updateMasterRepSlaveUser(username){
             <div class='line'><span class='tname'>用户名</span><div class='info-r'><input name='username' readonly='readonly' class='bt-input-text mr5' placeholder='用户名' type='text' style='width:330px;' value='"+username+"'></div></div>\
             <div class='line'>\
             <span class='tname'>密码</span>\
-            <div class='info-r'><input class='bt-input-text mr5' type='text' name='password' id='MyPassword' style='width:330px' value='"+(randomStrPwd(16))+"' /><span title='随机密码' class='glyphicon glyphicon-repeat cursor' onclick='repeatPwd(16)'></span></div>\
+            <div class='info-r'><input class='bt-input-text mr5' type='text' name='password' id='MyPassword' style='width:330px' value='"+password+"' /><span title='随机密码' class='glyphicon glyphicon-repeat cursor' onclick='repeatPwd(16)'></span></div>\
             </div>\
             <input type='hidden' name='ps' value='' />\
             <div class='bt-form-submit-btn'>\
@@ -1844,10 +1844,11 @@ function getMasterRepSlaveList(){
         for (i in user_list) {
             // console.log(i);
             var name = user_list[i]['username'];
+            var password = user_list[i]['password'];
             list += '<tr><td>'+name+'</td>\
-                <td>'+user_list[i]['password']+'</td>\
+                <td>'+password+'</td>\
                 <td>\
-                    <a class="btlink" onclick="updateMasterRepSlaveUser(\''+name+'\');">修改</a> | \
+                    <a class="btlink" onclick="updateMasterRepSlaveUser(\''+name+'\',\''+password+'\');">修改</a> | \
                     <a class="btlink" onclick="delMasterRepSlaveUser(\''+name+'\');">删除</a> | \
                     <a class="btlink" onclick="setDbMasterAccess(\''+name+'\');">权限</a> | \
                     <a class="btlink" onclick="getMasterRepSlaveUserCmd(\''+name+'\');">从库同步命令</a>\
@@ -1976,6 +1977,84 @@ function getFullSyncStatus(db){
         });
     }
     
+}
+
+function dataSyncVerify(db){
+    var reqTimer = null;
+
+    function requestLogs(layerIndex){
+        myPostN('sync_database_repair_log', {db:db, sign:'',op:'get'}, function(rdata){
+            var rdata = $.parseJSON(rdata.data);
+
+            if(!rdata.status) {
+                layer.close(layerIndex);
+                layer.msg(rdata.msg,{icon:2, time:2000});
+                clearInterval(reqTimer);
+                return;
+            };
+
+            if (rdata.msg == ''){
+                rdata.msg = '暂无数据!';
+            }
+
+            $("#data_verify_log").html(rdata.msg);
+            //滚动到最低
+            var ob = document.getElementById('data_verify_log');
+            ob.scrollTop = ob.scrollHeight; 
+        });
+    }
+
+    layer.open({
+        type: 1,
+        title: '同步数据库['+db+']数据校验',
+        area: '500px',
+        btn:[ "开始","取消","手动"],
+        content:"<div class='bt-form'>\
+                "+'<pre id="data_verify_log" style="overflow: auto; border: 0px none; line-height:23px;padding: 5px; margin: 0px; white-space: pre-wrap; height: 395px; background-color: rgb(51,51,51);color:#f1f1f1;border-radius:0px;font-family:"></pre>'+"\
+            </div>",
+        cancel: function(){
+            if (reqTimer){
+                clearInterval(reqTimer);
+            }
+        },
+        yes:function(index,layer_index){
+            myPostN('sync_database_repair_log', {db:db, sign:'',op:'do'}, function(data){});
+            layer.msg("执行成功");
+
+            requestLogs(layer_index);
+            reqTimer = setInterval(function(){
+                requestLogs(layer_index);
+            },3000);
+        },
+        success:function(){
+        },
+        btn3: function(){
+            myPostN('sync_database_repair_log', {db:db, sign:'',op:'cmd'}, function(rdata){
+                var rdata = $.parseJSON(rdata.data);
+                layer.open({
+                title: "手动执行命令CMD",
+                    area: ['600px', '180px'],
+                    type:1,
+                    closeBtn: 1,
+                    shadeClose: false,
+                    btn:["复制","取消"],
+                    content: '<div class="pd15">\
+                                <div class="divtable">\
+                                    <pre class="layui-code">'+rdata.data+'</pre>\
+                                </div>\
+                            </div>',
+                    success:function(){
+                        copyText(rdata.data);
+                    },
+                    yes:function(){
+                        copyText(rdata.data);
+                    }
+                });
+            });
+            return false;
+        }
+
+    });
 }
 
 function addSlaveSSH(ip=''){
@@ -2633,7 +2712,8 @@ function masterOrSlaveConf(version=''){
                 list += '<td>' + rdata.data[i]['name'] +'</td>';
                 list += '<td style="text-align:right">' + 
                     '<a href="javascript:;" class="btlink" onclick="setDbSlave(\''+rdata.data[i]['name']+'\')"  title="加入|退出">'+(rdata.data[i]['slave']?'退出':'加入')+'</a> | ' +
-                    '<a href="javascript:;" class="btlink" onclick="getFullSyncStatus(\''+rdata.data[i]['name']+'\')" title="同步">同步</a>' +
+                    '<a href="javascript:;" class="btlink" onclick="getFullSyncStatus(\''+rdata.data[i]['name']+'\')" title="同步">同步</a> | ' +
+                    '<a href="javascript:;" class="btlink" onclick="dataSyncVerify(\''+rdata.data[i]['name']+'\')" title="数据校验">数据校验</a>' +
                 '</td>';
                 list += '</tr>';
             }

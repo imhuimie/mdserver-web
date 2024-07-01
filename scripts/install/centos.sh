@@ -31,6 +31,8 @@ yum install -y libmcrypt
 yum install -y libmcrypt-devel
 yum install -y mysql-devel
 yum install -y expect
+yum install -y pv
+yum install -y bc
 
 
 # if [ -f /usr/sbin/iptables ];then

@@ -74,7 +74,6 @@ def initConf():
         content = ""
 
         clog = [
-            "/var/spool/clientmqueue/*",
             "/var/log/cron-*",
             "/var/log/maillog-*",
             "/var/log/secure-*",
@@ -82,9 +81,36 @@ def initConf():
             "/var/log/yum.log-*",
             "/var/log/messages-*",
             "/var/log/btmp-*",
+            "/var/log/auth.*",
+            "/var/log/messages.*",
+            "/var/log/debug.*",
+            "/var/log/syslog.*",
+            "/var/log/btmp.*",
+            "/var/log/sa/sa*",
+            "/var/log/sysstat/sa*",
+            "/var/log/atop/atop*",
+            "/var/log/anaconda/*.log",
+
+            "/var/log/dpkg.log.*",
+            "/var/log/alternatives.log.*",
+            "/var/log/user.log.*",
+            "/var/log/kern.log.*",
+            "/var/log/daemon.log.*",
+
+            "/var/log/*.gz",
+            "/var/log/*.xz",
+            "/var/log/*.log.*",
+
             "/var/log/audit/audit.log.*",
+            "/var/log/hawkey.log-*",
+            "/var/log/apt/*.gz",
+            "/var/log/apt/*.xz",
             "/var/log/rhsm/rhsm.log-*",
             "/var/log/rhsm/rhsmcertd.log-*",
+            "/var/log/exim4/*.gz",
+            "/var/log/journal/*",
+            "/var/spool/clientmqueue/*",
+           
             "/tmp/yum_save_*",
             "/tmp/tmp.*",
         ]
@@ -99,7 +125,27 @@ def initConf():
             "/var/log/secure",
             "/var/log/lastlog",
             "/var/log/cron",
-            "/www/server/cron"
+            "/www/server/rsyncd",
+            "/www/server/sphinx/index",
+            "/www/server/mongodb/logs",
+            "/www/server/php/53/var/log",
+            "/www/server/php/54/var/log",
+            "/www/server/php/55/var/log",
+            "/www/server/php/56/var/log",
+            "/www/server/php/70/var/log",
+            "/www/server/php/71/var/log",
+            "/www/server/php/72/var/log",
+            "/www/server/php/73/var/log",
+            "/www/server/php/74/var/log",
+            "/www/server/php/80/var/log",
+            "/www/server/php/81/var/log",
+            "/www/server/php/82/var/log",
+            "/www/server/php/83/var/log",
+            "/www/server/php/84/var/log",
+            "/www/server/openresty/nginx/logs",
+            "/www/server/phpmyadmin",
+            "/www/server/redis/data",
+            "/www/server/cron",
         ]
         for i in clogcom:
             if os.path.exists(i):
@@ -181,6 +227,13 @@ def cleanDirLog(path):
             cleanDirLog(abspath)
 
 
+def cleanRun():
+    plugin_dir = getPluginDir()
+    log_file = getServerDir()+'/clean.log'
+    cmd = 'python3 '+plugin_dir+'/index.py clean > '+log_file
+    os.system(cmd)
+    return mw.returnJson(True, '执行成功!')
+
 def cleanLog():
     conf = getConf()
     clist = mw.readFile(conf).strip()
@@ -205,6 +258,7 @@ def cleanLog():
                 cleanDirLog(abspath)
                 continue
 
+    
 if __name__ == "__main__":
     func = sys.argv[1]
     if func == 'status':
@@ -223,5 +277,7 @@ if __name__ == "__main__":
         print(runLog())
     elif func == 'clean':
         cleanLog()
+    elif func == 'clean_run':
+        print(cleanRun())
     else:
         print('error')

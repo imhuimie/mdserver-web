@@ -18,7 +18,7 @@
 
 
 [![Wiki](https://img.shields.io/badge/MW-Wiki-red?style=for-the-badge&logo=wiki)](https://github.com/midoks/mdserver-web/wiki)
-[![](https://data.jsdelivr.com/v1/package/gh/midoks/mdserver-web/badge?style=for-the-badge)](https://www.jsdelivr.com/package/gh/midoks/mdserver-web)
+[![jsdelivr](https://data.jsdelivr.com/v1/package/gh/midoks/mdserver-web/badge)](https://www.jsdelivr.com/package/gh/midoks/mdserver-web)
 
 * SSH终端工具
 * 面板收藏功能
@@ -110,10 +110,9 @@ docker run -itd --name mw-server --privileged=true -p 7200:7200 -p 80:80 -p 443:
 ```
 
 
-### 版本更新 0.16.6
+### 版本更新 0.17.1
 
-- openresty【1.25.3.1】配置更新，支持h3; 
-- 修复php83的扩展bcmath在centos7安装出错。
+- 任务管理器-插件。
 
 ### JSDelivr安装地址
 

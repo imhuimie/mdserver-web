@@ -8,15 +8,24 @@ rootPath=$(dirname "$rootPath")
 serverPath=$(dirname "$rootPath")
 
 
-# cd /www/server/mdserver-web/plugins/mysql-yum && bash install.sh install 8.0
+# cd /www/server/mdserver-web/plugins/mysql-yum && bash install.sh install 8.4
 # cd /www/server/mdserver-web/plugins/mysql-yum && bash install.sh uninstall 8.0
 # cd /www/server/mdserver-web && python3 /www/server/mdserver-web/plugins/mysql-yum/index.py start 8.0
+# cd /www/server/mdserver-web && python3 /www/server/mdserver-web/plugins/mysql-yum/index.py get_master_status 8.4
 
 install_tmp=${rootPath}/tmp/mw_install.pl
 
 
 action=$1
 type=$2
+
+if id mysql &> /dev/null ;then 
+    echo "mysql UID is `id -u mysql`"
+    echo "mysql Shell is `grep "^mysql:" /etc/passwd |cut -d':' -f7 `"
+else
+    groupadd mysql
+	useradd -g mysql -s /usr/sbin/nologin mysql
+fi
 
 
 

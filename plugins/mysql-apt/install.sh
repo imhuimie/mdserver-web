@@ -11,14 +11,23 @@ serverPath=$(dirname "$rootPath")
 
 # cd /www/server/mdserver-web/plugins/mysql-apt && bash install.sh install 8.0
 # cd /www/server/mdserver-web/plugins/mysql-apt && bash install.sh uninstall 8.0
-# cd /www/server/mdserver-web && python3 /www/server/mdserver-web/plugins/mysql-apt/index.py start 8.0
+# cd /www/server/mdserver-web && python3 /www/server/mdserver-web/plugins/mysql-apt/index.py start 5.7
 # cd /www/server/mdserver-web && python3 /www/server/mdserver-web/plugins/mysql-apt/index.py fix_db_access
+# cd /www/server/mdserver-web && source bin/activate && python3 plugins/mysql/index.py do_full_sync  {"db":"xxx","sign":"","begin":1}
 
 install_tmp=${rootPath}/tmp/mw_install.pl
 
 
 action=$1
 type=$2
+
+if id mysql &> /dev/null ;then 
+    echo "mysql UID is `id -u mysql`"
+    echo "mysql Shell is `grep "^mysql:" /etc/passwd |cut -d':' -f7 `"
+else
+    groupadd mysql
+	useradd -g mysql -s /usr/sbin/nologin mysql
+fi
 
 
 if [ "${2}" == "" ];then

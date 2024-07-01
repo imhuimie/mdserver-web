@@ -87,6 +87,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+lib/python*
 
 # Spyder project settings
 .spyderproject
@@ -98,6 +99,12 @@ venv.bak/
 # mkdocs documentation
 /site
 
+bin
+pyvenv.cfg
+include
+share
+pip-selfcheck.json
+
 # mypy
 .mypy_cache/
 
@@ -108,7 +115,22 @@ tmp/*
 *.swp
 *.pem
 *.zip
+debug.out
+mdioks.session-journal
+*.session
+
 logs/*
+
+ssl/local
+ssl/nginx
+ssl/choose.pl
+
+scripts/init.d/mw
+scripts/mdserver-web
+
+data/api_login.txt
+data/sessions
+
 data/*.db
 data/iplist.txt
 data/json/index.json
@@ -122,27 +144,11 @@ data/default.pl
 data/backup.pl
 data/debug.pl
 data/default_site.pl
-
-ssl/input.pl
-
-lib/python*
-
-bin
-pyvenv.cfg
-include
-share
-pip-selfcheck.json
-
-scripts/init.d/mw
-scripts/mdserver-web
-
-data/api_login.txt
-data/sessions
 data/ssl.pl
+
 data/port.pl
 data/ipv6.pl
 data/restart.pl
-data/ssl.pl
 data/edate.pl
 data/osname.pl
 data/only_netio_counters.pl
@@ -173,8 +179,5 @@ plugins/v2ray
 plugins/frp
 plugins/file_search
 plugins/proxysql
-debug.out
-
-
-mdioks.session-journal
-*.session
+plugins/tidb
+plugins/gorse

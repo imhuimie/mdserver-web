@@ -209,6 +209,21 @@ mw_unbind_domain()
     fi
 }
 
+mw_unbind_ssl()
+{
+    if [ -f $mw_path/local ];then
+        rm -rf $mw_path/local
+    fi
+
+    if [ -f $mw_path/nginx ];then
+        rm -rf $mw_path/nginx
+    fi
+
+    if [ -f $mw_path/ssl/choose.pl ];then
+        rm -rf $mw_path/ssl/choose.pl
+    fi
+}
+
 error_logs()
 {
 	tail -n 100 $mw_path/logs/error.log
@@ -258,7 +273,7 @@ mw_mirror()
     else
         bash <(curl --insecure -sSL https://gitee.com/SuperManito/LinuxMirrors/raw/main/ChangeMirrors.sh)
     fi
-    cd /www/server/mdserver-web
+    cd ${ROOT_PATH}/mdserver-web
 }
 
 mw_install_app()
@@ -297,8 +312,8 @@ mw_debug(){
         port=$(cat $mw_path/data/port.pl)
     fi
 
-    if [ -d /www/server/mdserver-web ];then
-        cd /www/server/mdserver-web
+    if [ -d ${ROOT_PATH}/mdserver-web ];then
+        cd ${ROOT_PATH}/mdserver-web
     fi
     gunicorn -b :$port -k geventwebsocket.gunicorn.workers.GeventWebSocketWorker -w 1  app:app
 }
@@ -373,7 +388,8 @@ mw_connect_mysql(){
     INPUT_KEY=${SOURCE_LIST_KEY[$INPUT]}
     CHOICE_DB=${DB_TYPE[$INPUT_KEY]}
     echo "login to ${CHOICE_DB}:"
-    pwd=$(cd /www/server/mdserver-web && python3 /www/server/mdserver-web/plugins/${CHOICE_DB}/index.py root_pwd)
+
+    pwd=$(cd ${ROOT_PATH}/mdserver-web && python3 ${ROOT_PATH}/mdserver-web/plugins/${CHOICE_DB}/index.py root_pwd)
     if [ "$CHOICE_DB" == "mysql" ];then
         ${ROOT_PATH}/mysql/bin/mysql -uroot -p"${pwd}"
     fi
@@ -392,15 +408,34 @@ mw_connect_mysql(){
 
 }
 
+
+mw_redis(){
+    CONF="${ROOT_PATH}/redis/redis.conf"
+
+    if [ ! -f "$CONF" ]; then
+        echo -e "not install redis!"
+        exit 1
+    fi
+
+    REDISPORT=$(cat $CONF |grep port|grep -v '#'|awk '{print $2}')
+    REDISPASS=$(cat $CONF |grep requirepass|grep -v '#'|awk '{print $2}')
+    if [ "$REDISPASS" != "" ];then
+        REDISPASS=" -a $REDISPASS"
+    fi
+    CLIEXEC="${ROOT_PATH}/redis/bin/redis-cli -p $REDISPORT$REDISPASS"
+    echo $CLIEXEC
+    ${CLIEXEC}
+}
+
 mw_venv(){
-    cd /www/server/mdserver-web && source bin/activate
+    cd ${ROOT_PATH}/mdserver-web && source bin/activate
 }
 
 mw_clean_lib(){
-    cd /www/server/mdserver-web && rm -rf lib
-    cd /www/server/mdserver-web && rm -rf lib64
-    cd /www/server/mdserver-web && rm -rf bin
-    cd /www/server/mdserver-web && rm -rf include
+    cd ${ROOT_PATH}/mdserver-web && rm -rf lib
+    cd ${ROOT_PATH}/mdserver-web && rm -rf lib64
+    cd ${ROOT_PATH}/mdserver-web && rm -rf bin
+    cd ${ROOT_PATH}/mdserver-web && rm -rf include
 }
 
 case "$1" in
@@ -425,14 +460,21 @@ case "$1" in
     'install_app') mw_install_app;;
     'close_admin_path') mw_close_admin_path;;
     'unbind_domain') mw_unbind_domain;;
+    'unbind_ssl') mw_unbind_domain;;
     'debug') mw_debug;;
     'mirror') mw_mirror;;
     'db') mw_connect_mysql;;
+    'redis') mw_redis;;
     'venv') mw_venv;;
     'clean_lib') mw_clean_lib;;
     'default')
         cd $mw_path
         port=7200
+        scheme=http
+
+        if [ -f $mw_path/ssl/choose.pl ];then
+            scheme=https
+        fi
         
         if [ -f $mw_path/data/port.pl ];then
             port=$(cat $mw_path/data/port.pl)
@@ -463,9 +505,9 @@ case "$1" in
                     mw_start
                 fi
 
-                address="MW-Panel-Url-Ipv4: http://$v4:$port$auth_path \nMW-Panel-Url-Ipv6: http://[$v6]:$port$auth_path"
+                address="MW-Panel-Url-Ipv4: ${scheme}://$v4:$port$auth_path \nMW-Panel-Url-Ipv6: ${scheme}://[$v6]:$port$auth_path"
             elif [ "$v4" != "" ]; then
-                address="MW-Panel-Url: http://$v4:$port$auth_path"
+                address="MW-Panel-Url: ${scheme}://$v4:$port$auth_path"
             elif [ "$v6" != "" ]; then
 
                 if [ ! -f $mw_path/data/ipv6.pl ];then
@@ -474,12 +516,12 @@ case "$1" in
                     mw_stop
                     mw_start
                 fi
-                address="MW-Panel-Url: http://[$v6]:$port$auth_path"
+                address="MW-Panel-Url: ${scheme}://[$v6]:$port$auth_path"
             else
-                address="MW-Panel-Url: http://you-network-ip:$port$auth_path"
+                address="MW-Panel-Url: ${scheme}://you-network-ip:$port$auth_path"
             fi
         else
-            address="MW-Panel-Url: http://$address:$port$auth_path"
+            address="MW-Panel-Url: ${scheme}://$address:$port$auth_path"
         fi
 
         show_panel_ip="$port|"

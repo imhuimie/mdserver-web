@@ -396,14 +396,16 @@ class crontab_api:
                 if soft_name == 'postgresql':
                     sqlite3_name = 'pgsql'
 
+                if soft_name == 'mongodb':
+                    sqlite3_name = 'mongodb'
+
             db_list = {}
             db_list['orderOpt'] = bak_data
 
             if not os.path.exists(path + '/' + sqlite3_name + '.db'):
                 db_list['data'] = []
             else:
-                db_list['data'] = mw.M('databases').dbPos(
-                    path, sqlite3_name).field('name,ps').select()
+                db_list['data'] = mw.M('databases').dbPos(path, sqlite3_name).field('name,ps').select()
             return mw.getJson(db_list)
 
         if stype == 'path':
@@ -537,6 +539,10 @@ fi''' % (mw.getRunDir(),)
             head = head + start_head + source_bin_activate + "\n"
             log = '.log'
 
+            #所有
+            if param['sname'] == 'ALL':
+                log = ''
+
             script_dir = mw.getRunDir() + "/scripts"
             source_stype = 'database'
             if stype.find('database_') > -1:
@@ -573,7 +579,7 @@ fi''' % (mw.getRunDir(),)
                 else:
                     shell = head + param['sbody'].replace("\r\n", "\n")
 
-                shell += '''
+            shell += '''
 echo "----------------------------------------------------------------------------"
 endDate=`date +"%Y-%m-%d %H:%M:%S"`
 END_MW_SHELL_TIME=`date +"%s"`

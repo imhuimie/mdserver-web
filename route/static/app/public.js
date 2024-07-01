@@ -16,6 +16,39 @@ function toSize(a) {
 	}
 }
 
+function toSizePos(a, pos = 0) {
+	var d = [" B", " KB", " MB", " GB", " TB", " PB"];
+	var e = 1024;
+	var r = {};
+	for(var b = 0; b < d.length; b++) {
+		if (pos > 0){
+			if (b == pos){
+				r['name'] = (b == 0 ? a : a.toFixed(2)) + d[b];
+				r['pos'] = b;
+				return r
+			}
+		} else {
+			if( a < e) {
+				r['name'] = (b == 0 ? a : a.toFixed(2)) + d[b];
+				r['pos'] = b;
+				return r
+			}
+		}
+		a /= e;
+	}
+}
+
+function toSizeMB(a) {
+	var d = [" KB", " MB"];
+	var e = 1024;
+	var i = 0;
+	for(var b = 0; b < d.length; b++) {
+		a /= e;
+		i = b;
+	}
+	return a.toFixed(2) + d[i]
+}
+
 function toTrim(x) {
     return x.replace(/^\s+|\s+$/gm,'');
 }
@@ -577,7 +610,7 @@ function showMsg(msg, callback ,icon, time){
 
 function openPath(a) {
 	setCookie("open_dir_path", a);
-	window.location.href = "/files/"
+	window.location.href = "/files/";
 }
 
 function onlineEditFile(k, f, callback) {
@@ -761,6 +794,10 @@ function copyText(value) {
 }
 
 function copyPass(value){
+	if (value == ''){
+		layer.msg('空,不能复制',{icon:2,time:2000});
+		return;
+	}
 	copyText(value);
 }
 
@@ -985,7 +1022,7 @@ function setSelectChecked(c, d) {
 
 function jump() {
 	layer.closeAll();
-	window.location.href = "/soft"
+	window.location.href = "/soft";
 }
 
 function installTips() {
@@ -1119,15 +1156,15 @@ function getPanelList(){
 			var user = $(this).attr("data-user");
 			var pw = $(this).attr("data-pw");
 			layer.open({
-			  type: 2,
-			  title: false,
-			  closeBtn: 0, //不显示关闭按钮
-			  shade: [0],
-			  area: ['340px', '215px'],
-			  offset: 'rb', //右下角弹出
-			  time: 5, //2秒后自动关闭
-			  anim: 2,
-			  content: [murl+'/login', 'no']
+				type: 2,
+				title: false,
+			 	closeBtn: 0, //不显示关闭按钮
+				shade: [0],
+				area: ['340px', '215px'],
+				offset: 'rb', //右下角弹出
+				time: 5, //2秒后自动关闭
+				anim: 2,
+				content: [murl+'/login', 'no']
 			});
 			var loginForm ='<div id="btpanelform" style="display:none"><form id="toBtpanel" action="'+murl+'/do_login" method="post" target="btpfrom">\
 				<input name="username" id="btp_username" value="'+user+'" type="text">\
@@ -1314,58 +1351,57 @@ function execLog(){
  * @param {String} dateFormat 返回的日期格式，默认为'H:i:s'
  */
 function getSFM(seconds, dateFormat = 'H:i:s') {
-  var obj = {};
-  obj.H = Number.parseInt(seconds / 3600);
-  obj.i = Number.parseInt((seconds - obj.H * 3600) / 60);
-  obj.s = Number.parseInt(seconds - obj.H * 3600 - obj.i * 60);
-  if (obj.H < 10) {
-    obj.H = '0' + obj.H;
-  }
-  if (obj.i < 10) {
-    obj.i = '0' + obj.i;
-  }
-  if (obj.s < 10) {
-    obj.s = '0' + obj.s;
-  }
+
+	var obj = {};
+ 	obj.H = Number.parseInt(seconds / 3600);
+ 	obj.i = Number.parseInt((seconds - obj.H * 3600) / 60);
+ 	obj.s = Number.parseInt(seconds - obj.H * 3600 - obj.i * 60);
+ 	if (obj.H < 10) {
+    	obj.H = '0' + obj.H;
+  	}
+  	if (obj.i < 10) {
+    	obj.i = '0' + obj.i;
+  	}
+  	if (obj.s < 10) {
+    	obj.s = '0' + obj.s;
+  	}
  
-  // 3.解析
-  var rs = dateFormat.replace('H', obj.H).replace('i', obj.i).replace('s', obj.s);
-  return rs;
+  	// 3.解析
+  	var rs = dateFormat.replace('H', obj.H).replace('i', obj.i).replace('s', obj.s);
+  	return rs;
 }
 
 function remind(a){
 	a = a == undefined ? 1 : a;
 	$.post("/task/list", "table=tasks&result=2,4,6,8&limit=10&p=" + a, function(g) {
-		// console.log(g);
-		var e = "";
+		var e = '';
 		var f = false;
 		var task_count = 0;
 		for(var d = 0; d < g.data.length; d++) {
-			if(g.data[d].status != '1'){
-				task_count++;
-				e += '<tr>\
-						<td><input type="checkbox"></td>\
-						<td>\
-							<div class="titlename c3">\
-								<span>'+g.data[d].name+'</span>\
-								<span class="rs-status">【'+lan.bt.task_the+'】<span>\
-								<span class="rs-time">耗时['+ getSFM(g.data[d].end - g.data[d].start) +']</span>\
-							</div>\
-						</td>\
-						<td class="text-right c3">'+g.data[d].addtime+'</td>\
-					</tr>';
-			} else{
-				e += '<tr>\
-						<td><input type="checkbox"></td>\
-						<td>\
-							<div class="titlename c3">'+g.data[d].name+'</span>\
-								<span class="rs-status">【'+lan.bt.task_ok+'】<span>\
-								<span class="rs-time">耗时['+ getSFM(g.data[d].end - g.data[d].start) +']</span>\
-							</div>\
-						</td>\
-						<td class="text-right c3">'+g.data[d].addtime+'</td>\
-					</tr>';
+			var status = g.data[d].status;
+			var status_text = '已经完成';
+			var cos_text = '';
+			if (status == '1'){
+				status_text = '完成';
+				cos_text = '耗时['+getSFM(g.data[d].end - g.data[d].start)+']'
+			} else if (status == '0'){
+				status_text = '正在处理';
+				cos_text = '等待中..';
+			} else if (status == '-1'){
+				status_text = '安装中';
+				cos_text = '..';
 			}
+
+			e += '<tr>\
+				<td><input type="checkbox"></td>\
+				<td>\
+					<div class="titlename c3">'+g.data[d].name+'</span>\
+						<span class="rs-status">【'+status_text+'】<span>\
+						<span class="rs-time">'+cos_text+'</span>\
+					</div>\
+				</td>\
+				<td class="text-right c3">'+g.data[d].addtime+'</td>\
+			</tr>';
 		}
 		var con = '<div class="divtable"><table class="table table-hover">\
 					<thead>\
@@ -1375,15 +1411,16 @@ function remind(a){
 						</tr>\
 					</thead>\
 					<tbody id="remind">'+e+'</tbody>\
-					</table></div>\
-					<div class="mtb15" style="height:32px">\
-						<div class="pull-left buttongroup" style="display:none;">\
-							<button class="btn btn-default btn-sm mr5 rs-del" disabled="disabled">'+lan.public.del+'</button>\
-							<button class="btn btn-default btn-sm mr5 rs-read" disabled="disabled">'+lan.bt.task_tip_read+'</button>\
-							<button class="btn btn-default btn-sm">'+lan.bt.task_tip_all+'</button>\
-						</div>\
-						<div id="taskPage" class="page"></div>\
-					</div>';
+					</table>\
+				</div>\
+				<div class="mtb15" style="height:32px">\
+					<div class="pull-left buttongroup" style="display:none;">\
+						<button class="btn btn-default btn-sm mr5 rs-del" disabled="disabled">'+lan.public.del+'</button>\
+						<button class="btn btn-default btn-sm mr5 rs-read" disabled="disabled">'+lan.bt.task_tip_read+'</button>\
+						<button class="btn btn-default btn-sm">'+lan.bt.task_tip_all+'</button>\
+					</div>\
+					<div id="taskPage" class="page"></div>\
+				</div>';
 		
 		$(".task_count").text(task_count);
 		$(".msg_count").text(g.count);
@@ -1392,9 +1429,9 @@ function remind(a){
 
 		$("#Rs-checkAll").click(function(){
 			if($(this).prop("checked")){
-				$("#remind").find("input").prop("checked",true)
+				$("#remind").find("input").prop("checked",true);
 			} else {
-				$("#remind").find("input").prop("checked",false)
+				$("#remind").find("input").prop("checked",false);
 			}
 		});
 	},'json');
@@ -2240,7 +2277,7 @@ function pluginConfig(_name, version, func){
 
 
 //配置修改模版 --- start
-function pluginConfigTpl(_name, version, func, config_tpl_func, read_config_tpl_func){
+function pluginConfigTpl(_name, version, func, config_tpl_func, read_config_tpl_func, save_callback_func){
 	if ( typeof(version) == 'undefined' ){
 		version = '';
 	}
@@ -2266,7 +2303,7 @@ function pluginConfigTpl(_name, version, func, config_tpl_func, read_config_tpl_
     			<textarea class="bt-input-text" style="height: 320px; line-height:18px;" id="textBody"></textarea>\
                 <button id="onlineEditFileBtn" class="btn btn-success btn-sm" style="margin-top:10px;">保存</button>\
                 <ul class="help-info-text c7 ptb15">\
-                    <li>此处为'+ _name + version +'主配置文件,若您不了解配置规则,请勿随意修改。</li>\
+                    <li>此处为【'+ _name + version +'】主配置文件,若您不了解配置规则,请勿随意修改。</li>\
                 </ul>';
     $(".soft-man-con").html(con);
 
@@ -2306,7 +2343,7 @@ function pluginConfigTpl(_name, version, func, config_tpl_func, read_config_tpl_
 		                    "Ctrl-H": "replaceAll",
 		                    "Ctrl-S": function() {
 		                    	$("#textBody").text(editor.getValue());
-		                        pluginConfigSave(fileName);
+		                        pluginConfigSave(fileName,save_callback_func);
 		                    }
 		                },
 		                lineNumbers: true,
@@ -2317,7 +2354,7 @@ function pluginConfigTpl(_name, version, func, config_tpl_func, read_config_tpl_
 		            $("#onlineEditFileBtn").unbind('click');
 		            $("#onlineEditFileBtn").click(function(){
 		                $("#textBody").text(editor.getValue());
-		                pluginConfigSave(fileName);
+		                pluginConfigSave(fileName, save_callback_func);
 		            });
     			},'json');
     		}
@@ -2346,7 +2383,7 @@ function pluginConfigTpl(_name, version, func, config_tpl_func, read_config_tpl_
                     "Ctrl-H": "replaceAll",
                     "Ctrl-S": function() {
                     	$("#textBody").text(editor.getValue());
-                        pluginConfigSave(fileName);
+                        pluginConfigSave(fileName,save_callback_func);
                     }
                 },
                 lineNumbers: true,
@@ -2356,7 +2393,7 @@ function pluginConfigTpl(_name, version, func, config_tpl_func, read_config_tpl_
             $(".CodeMirror-scroll").css({"height":"300px","margin":0,"padding":0});
             $("#onlineEditFileBtn").click(function(){
                 $("#textBody").text(editor.getValue());
-                pluginConfigSave(fileName);
+                pluginConfigSave(fileName,save_callback_func);
             });
         },'json');
     },'json');
@@ -2483,13 +2520,19 @@ function pluginConfigListTpl(_name, version, config_tpl_func, read_config_tpl_fu
 
 
 //配置保存
-function pluginConfigSave(fileName) {
+function pluginConfigSave(fileName, callback) {
     var data = encodeURIComponent($("#textBody").val());
     var encoding = 'utf-8';
     var loadT = layer.msg('保存中...', {icon: 16,time: 0});
     $.post('/files/save_body', 'data=' + data + '&path=' + fileName + '&encoding=' + encoding, function(rdata) {
         layer.close(loadT);
-        layer.msg(rdata.msg, {icon: rdata.status ? 1 : 2});
+
+        showMsg(rdata.msg, function(){
+        	if ( rdata.status && typeof(callback) == 'function'){
+	        	callback();
+	        }
+        },{icon: rdata.status ? 1 : 2});
+     
     },'json');
 }
 

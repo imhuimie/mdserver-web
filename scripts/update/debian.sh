@@ -3,7 +3,11 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin:/opt/hom
 export PATH
 export DEBIAN_FRONTEND=noninteractive
 
+apt autoremove -y
 apt install -y locate
+if [ ! -d /usr/share/locale/locale.alias ];then
+    mkdir -p /usr/share/locale/locale.alias
+fi
 locale-gen en_US.UTF-8
 localedef -v -c -i en_US -f UTF-8 en_US.UTF-8 > /dev/null 2>&1
 export LC_CTYPE=en_US.UTF-8

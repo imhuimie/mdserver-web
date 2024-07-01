@@ -79,10 +79,11 @@ def getRootDir():
 def getPluginDir():
     return getRunDir() + '/plugins'
 
-
 def getPanelDataDir():
     return getRunDir() + '/data'
 
+def getMWLogs():
+    return getRunDir() + '/logs'
 
 def getPanelTmp():
     return getRunDir() + '/tmp'
@@ -198,10 +199,26 @@ def getFileSuffix(file):
     return ext
 
 
+
 def isAppleSystem():
     if getOs() == 'darwin':
         return True
     return False
+
+def isDocker():
+    return os.path.exists('/.dockerenv')
+
+
+def isSupportSystemctl():
+    if isAppleSystem():
+        return False
+    if isDocker():
+        return False
+
+    current_os = getOs()
+    if current_os.startswith("freebsd"):
+        return False
+    return True
 
 
 def isDebugMode():
@@ -346,6 +363,9 @@ def restartMw():
     import system_api
     system_api.system_api().restartMw()
 
+def restartNginx(self):
+    writeFile('data/restart_nginx.pl', 'True')
+    return True
 
 def checkWebConfig():
     op_dir = getServerDir() + '/openresty/nginx'
@@ -908,6 +928,11 @@ def aesDecrypt_Crypto(data, key, vi):
     text_decrypted = text_decrypted.decode('utf8').rstrip()  # 去掉补位的右侧空格
     return text_decrypted
 
+def getDefault(data,val,def_val=''):
+    if val in data:
+        return data[val]
+    return def_val
+
 def encodeImage(imgsrc, newsrc):
     # 图片加密
     import struct
@@ -1280,25 +1305,49 @@ def getClientIp():
 def checkDomainPanel():
     tmp = getHost()
     domain = readFile('data/bind_domain.pl')
-    port = readFile('data/port.pl').strip()
 
-    npid = getServerDir() + "/openresty/nginx/logs/nginx.pid"
-    if not os.path.exists(npid):
+    port = 7200
+    if os.path.exists('data/port.pl'):
+        port = readFile('data/port.pl').strip()
+
+    scheme = 'http'
+
+    choose_file = getRunDir()+'/ssl/choose.pl'
+    if os.path.exists(choose_file):
+        choose = readFile(choose_file).strip()
+        if not inArray(['local','nginx'], choose):
+            return False
+    else:
         return False
 
-    nconf = getServerDir() + "/web_conf/nginx/vhost/panel.conf"
-    if os.path.exists(nconf):
-        port = "80"
+    local_ssl = getRunDir()+'/ssl/local'
+    if choose == 'local':
+        scheme = 'https'
 
-    if domain:
-        client_ip = getClientIp()
-        if client_ip in ['127.0.0.1', 'localhost', '::1']:
+    if choose == 'nginx':
+        # print(port)
+        npid = getServerDir() + "/openresty/nginx/logs/nginx.pid"
+        if not os.path.exists(npid):
             return False
-        if tmp.strip().lower() != domain.strip().lower():
-            from flask import Flask, redirect, request, url_for
-            to = "http://" + domain + ":" + str(port)
-            return redirect(to, code=302)
+
+        nconf = getServerDir() + "/web_conf/nginx/vhost/panel.conf"
+        if os.path.exists(nconf):
+            port = "80"
+    if not domain:
+        return False
+
+    client_ip = getClientIp()
+    if client_ip in ['127.0.0.1', 'localhost', '::1']:
+        return False
+
+    if tmp.strip().lower() != domain.strip().lower():
+        from flask import Flask, redirect, request, url_for
+        to = scheme + "://" + domain + ":" + str(port)
+        # print(to)
+        return redirect(to, code=302)
+
     return False
+
 
 
 def createLinuxUser(user, group):
@@ -1436,7 +1485,7 @@ def makeConf():
     file = getRunDir() + '/data/json/config.json'
     if not os.path.exists(file):
         c = {}
-        c['title'] = '老子面板'
+        c['title'] = '后羿面板'
         c['home'] = 'http://github/midoks/mdserver-web'
         c['recycle_bin'] = True
         c['template'] = 'default'
@@ -1611,6 +1660,12 @@ def sortFileList(path, ftype = 'mtime', sort = 'desc'):
             flist = sorted(flist, key=lambda f: os.path.getsize(os.path.join(path,f)), reverse=True)
         if sort == 'asc':
             flist = sorted(flist, key=lambda f: os.path.getsize(os.path.join(path,f)), reverse=False)
+
+    if ftype == 'fname':
+        if sort == 'desc':
+            flist = sorted(flist, key=lambda f: os.path.join(path,f), reverse=True)
+        if sort == 'asc':
+            flist = sorted(flist, key=lambda f: os.path.join(path,f), reverse=False)
     return flist
 
 
@@ -1799,28 +1854,38 @@ def getCertName(certPath):
         return None
 
 
-def createSSL():
+def createLocalSSL():
+    if not os.path.exists('ssl/local'):
+        execShell('mkdir -p ssl/local')
+
+
     # 自签证书
-    if os.path.exists('ssl/input.pl'):
-        return True
+    # if os.path.exists('ssl/local/input.pl'):
+    #     return True
+
+    client_ip = getClientIp()
+
     import OpenSSL
     key = OpenSSL.crypto.PKey()
     key.generate_key(OpenSSL.crypto.TYPE_RSA, 2048)
     cert = OpenSSL.crypto.X509()
     cert.set_serial_number(0)
-    cert.get_subject().CN = getLocalIp()
+    
+    if client_ip == '127.0.0.1':
+        cert.get_subject().CN = '127.0.0.1'
+    else:
+        cert.get_subject().CN = getLocalIp()
+    
     cert.set_issuer(cert.get_subject())
     cert.gmtime_adj_notBefore(0)
     cert.gmtime_adj_notAfter(86400 * 3650)
     cert.set_pubkey(key)
     cert.sign(key, 'md5')
-    cert_ca = OpenSSL.crypto.dump_certificate(
-        OpenSSL.crypto.FILETYPE_PEM, cert)
-    private_key = OpenSSL.crypto.dump_privatekey(
-        OpenSSL.crypto.FILETYPE_PEM, key)
+    cert_ca = OpenSSL.crypto.dump_certificate(OpenSSL.crypto.FILETYPE_PEM, cert)
+    private_key = OpenSSL.crypto.dump_privatekey(OpenSSL.crypto.FILETYPE_PEM, key)
     if len(cert_ca) > 100 and len(private_key) > 100:
-        writeFile('ssl/cert.pem', cert_ca, 'wb+')
-        writeFile('ssl/private.pem', private_key, 'wb+')
+        writeFile('ssl/local/cert.pem', cert_ca, 'wb+')
+        writeFile('ssl/local/private.pem', private_key, 'wb+')
         return True
     return False
 
@@ -2063,6 +2128,15 @@ def notifyMessage(msg, stype='common', trigger_time=300, is_write_log=True):
 
 ##################### notify  end #########################################
 
+
+def getGlibcVersion():
+    try:
+        cmd_result = execShell("ldd --version")[0]
+        if not cmd_result: return ''
+        glibc_version = cmd_result.split("\n")[0].split()[-1]
+    except:
+        return ''
+    return glibc_version
 
 ##################### ssh  start #########################################
 def getSshDir():

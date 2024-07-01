@@ -28,6 +28,8 @@ zypper install -y libevent-devel
 zypper install -y libtirpc-devel
 zypper install -y rpcgen
 zypper install -y expect
+zypper install -y pv
+zypper install -y bc
 
 zypper install -y libzip libzip-devel
 zypper install -y unrar rar
@@ -51,6 +53,8 @@ zypper install -y libtomcrypt-devel
 zypper install -y libXpm-devel
 zypper install -y freetype2-devel
 zypper install -y libargon2-devel
+
+zypper install -y net-tools-deprecated
 
 # zypper install -y  php-config
 

@@ -23,10 +23,10 @@ VERSION_ID=`cat /etc/*-release | grep VERSION_ID | awk -F = '{print $2}' | awk -
 # cd /www/server/mdserver-web/plugins/mysql-apt && bash install.sh install 8.0
 
 # 暂时debian12没有标准版,先用11使用
-if [ "$OSNAME" == 'debian' ] && [ "$VERSION_ID" == '12' ] ;then 
-	echo "暂时不支持该${OSNAME}${VERSION_ID}" > $install_tmp
-	exit 1
-fi
+# if [ "$OSNAME" == 'debian' ] && [ "$VERSION_ID" == '12' ] ;then 
+# 	echo "暂时不支持该${OSNAME}${VERSION_ID}" > $install_tmp
+# 	exit 1
+# fi
 
 
 ARCH="amd64"
@@ -45,7 +45,7 @@ if [ "$ARCH" != "amd64" ];then
 fi
 
 
-MYSQL_VER=8.0.33
+MYSQL_VER=8.0.36
 SUFFIX_NAME=${MYSQL_VER}-1${OSNAME}${VERSION_ID}_${ARCH}
 
 
@@ -57,6 +57,10 @@ APT_INSTALL()
 ########
 mkdir -p $myDir
 mkdir -p $serverPath/mysql-apt/bin
+
+
+mkdir -p /var/run/mysqld
+chown mysql -R /var/run/mysqld
 
 wget  --no-check-certificate -O ${myDir}/mysql-server_${SUFFIX_NAME}.deb-bundle.tar https://cdn.mysql.com/archives/mysql-8.0/mysql-server_${SUFFIX_NAME}.deb-bundle.tar
 chmod +x ${myDir}/mysql-server_${SUFFIX_NAME}.deb-bundle.tar
@@ -97,13 +101,6 @@ rm -rf $myDir
 Install_mysql()
 {
 	echo '正在安装脚本文件...' > $install_tmp
-	if id mysql &> /dev/null ;then 
-	    echo "mysql uid is `id -u mysql`"
-	    echo "mysql shell is `grep "^mysql:" /etc/passwd |cut -d':' -f7 `"
-	else
-	    groupadd mysql
-		useradd -g mysql mysql
-	fi
 
 	isApt=`which apt`
 	if [ "$isApt" != "" ];then

@@ -14,6 +14,7 @@ dnf install -y python3-devel
 dnf install -y python-devel
 dnf install -y crontabs
 dnf install -y mysql-devel
+dnf install -y pv
 
 SSH_PORT=`netstat -ntpl|grep sshd|grep -v grep | sed -n "1,1p" | awk '{print $4}' | awk -F : '{print $2}'`
 if [ "$SSH_PORT" == "" ];then
@@ -94,6 +95,7 @@ yum install -y bison re2c cmake
 yum install -y cmake3
 yum install -y autoconf
 yum install -y expect
+yum install -y bc
 
 yum install -y curl curl-devel
 yum install -y zlib zlib-devel
